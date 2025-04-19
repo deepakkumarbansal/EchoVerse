@@ -48,6 +48,7 @@ return (
     <div className="text-center">
       {isRecording ? (
         <button
+          type='button'
           onClick={() => {
             stopRecording();
             setIsRecording(false);
@@ -58,6 +59,7 @@ return (
         </button>
       ) : (
         <button
+        type='button'
           onClick={() => {
             startRecording();
             setIsRecording(true);
@@ -80,11 +82,11 @@ return (
     {audioBlob && (
       <>
         {!isPlaying ? (
-          <button className={`text-3xl mt-2`} onClick={() => {setIsPlaying(true); audioFile.play();}}>
+          <button type='button' className={`text-3xl mt-2`} onClick={() => {setIsPlaying(true); audioFile.play();}}>
             <IoIosPlayCircle />
           </button>
         ) : (
-          <button className={`text-3xl mt-2`} onClick={() => {setIsPlaying(false); audioFile.pause();}}>
+          <button type='button' className={`text-3xl mt-2`} onClick={() => {setIsPlaying(false); audioFile.pause();}}>
             <MdOutlinePauseCircleFilled />
           </button>
         )}

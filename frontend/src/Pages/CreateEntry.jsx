@@ -39,7 +39,7 @@ const CreateEntry = () => {
     formData.append('mood', mood == "🎭 Others" ? otherMood : mood);
     formData.append('audioBlob', audioBlob);
 
-    const response = await axios.post('http://localhost:8000/api/audio/create-audio', formData, {
+    const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/audio/create-audio`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

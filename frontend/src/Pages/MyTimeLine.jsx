@@ -10,7 +10,7 @@ const MyTimeLine = () => {
     setLoading(true);
     const fetchTimelineData = async () => {
       try {
-        const response = await axios.get("http://localhost:8000/api/audio/get-all-audio", {
+        const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/audio/get-all-audio`, {
           withCredentials: true,
         });
     
@@ -24,7 +24,7 @@ const MyTimeLine = () => {
               if (isUnlocked) {
                 try {
                   const fileResponse = await axios.get(
-                    `http://localhost:8000/api/audio/get-audio/${audioFile._id}`,
+                    `${import.meta.env.VITE_BASE_URL}/api/audio/get-audio/${audioFile._id}`,
                     { withCredentials: true }
                   );
     

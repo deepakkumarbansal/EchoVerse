@@ -10,7 +10,7 @@ const Profile = () => {
     const navigate = useNavigate();
     useEffect(() => {
         (async () => {
-            const response = await axios.get("http://localhost:8000/api/user/profile", {
+            const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/user/profile`, {
                 withCredentials: true,
             })
             if (response.status === 200) {
@@ -37,7 +37,7 @@ const Profile = () => {
                 <div className="mt-6">
                     <button onClick={async()=>{
                         localStorage.removeItem("token");
-                        await axios.post("http://localhost:8000/api/user/logout", {}, {
+                        await axios.post(`${import.meta.env.VITE_BASE_URL}/api/user/logout`, {}, {
                             withCredentials: true,
                         })
                         navigate("/login");
