@@ -26,6 +26,10 @@ const audioSchema = new Schema({
     unlocksAt:{
         type: Date,
         required: true,
+    },
+    notified: {
+        type: Boolean,
+        default: false,
     }
 },{timestamps: true});
 

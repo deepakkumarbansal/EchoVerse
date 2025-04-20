@@ -1,3 +1,4 @@
+
 # EchoVerse Backend
 
 ## Overview
@@ -11,6 +12,8 @@ The backend of **EchoVerse** is a robust and scalable system designed to handle 
 - Scalable architecture for handling high traffic  
 - Integration with third-party services  
 - Comprehensive error handling and logging  
+- Scheduled notification tasks using cron jobs  
+- Email notification system via Nodemailer
 
 ## Technologies Used
 
@@ -18,13 +21,13 @@ The backend of **EchoVerse** is a robust and scalable system designed to handle 
 - **Framework**: Express.js  
 - **Database**: MongoDB  
 - **Authentication**: JWT  
-- **Other Tools**: bcrypt, simple-crypto-js, cloudinary, etc.
+- **Other Tools**: bcrypt, simple-crypto-js, cloudinary, nodemailer, node-cron
 
 ## Installation
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/your-repo/echoverse-backend.git
+   git clone https://github.com/deepakkumarbansal/EchoVerse/tree/main/backend
    cd echoverse-backend
    ```
 
@@ -37,7 +40,7 @@ The backend of **EchoVerse** is a robust and scalable system designed to handle 
 
    Create a `.env` file in the root directory and add the following:
 
-   ```
+   ```env
    SIMPLE_CRYPTO_SECRET=your_simple_crypto_secret
    JWT_SECRET=your_jwt_secret
    CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
@@ -48,6 +51,8 @@ The backend of **EchoVerse** is a robust and scalable system designed to handle 
    CLOUDINARY_FOLDER=your_cloudinary_folder_name
    JWT_EXPIRES_IN=your_jwt_expiration_time
    CORS_URL=your_cors_url
+   EMAIL_USER=your_email@gmail.com
+   EMAIL_PASS=your_app_password
    ```
 
 4. **Run database migrations** (if applicable):
@@ -59,6 +64,51 @@ The backend of **EchoVerse** is a robust and scalable system designed to handle 
    ```bash
    npm run dev
    ```
+
+## Cron Jobs
+
+The application uses `node-cron` to schedule tasks like sending reminder emails or clearing expired data.
+
+Example location: `src/utils/cron.js`
+
+```js
+import cron from "node-cron";
+import { sendReminders } from "./emailService";
+
+cron.schedule("0 8 * * *", () => {
+  console.log("Running daily reminder task at 8 AM");
+  sendReminders();
+});
+```
+
+## Nodemailer
+
+Emails are sent using Gmail's SMTP server configured via Nodemailer.
+
+Example transporter setup (`src/utils/mailer.js`):
+
+```js
+import nodemailer from "nodemailer";
+
+const transporter = nodemailer.createTransport({
+  secure: true,
+  host: "smtp.gmail.com",
+  port: 465,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+export const sendEmail = async ({ to, subject, text }) => {
+  await transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to,
+    subject,
+    text,
+  });
+};
+```
 
 ## API Documentation
 
@@ -87,7 +137,7 @@ backend/
 ### User Routes
 
 - **POST /api/user/logout**  
-  Log out a user (clears token cookie).
+  Log out a user (clears token cookie).  
   **Headers**: `Authorization: Bearer <token>`
 
 - **POST /api/user/register**  
@@ -106,15 +156,15 @@ backend/
 
 - **POST /api/audio/upload**  
   Upload an audio file  
-  **Form Data**: `file`, `title`, `unlocksAt`, `mood`,
+  **Form Data**: `file`, `title`, `unlocksAt`, `mood`  
   **Headers**: `Authorization: Bearer <token>`
 
 - **GET /api/audio/:audioId**  
-  Retrieve audio file by ID
+  Retrieve audio file by ID  
   **Headers**: `Authorization: Bearer <token>`
 
 - **DELETE /api/audio/:audioId**  
-  Delete audio file by ID
+  Delete audio file by ID  
   **Headers**: `Authorization: Bearer <token>`
 
 - **GET /api/audio/get-all-audio**  

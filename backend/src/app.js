@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
+import "./utils/audioRemainderCron.js";
 
 dotenv.config({
     path: '../.env'
@@ -26,6 +27,7 @@ app.get('/', (req, res) => {
         message: "Welcome to the Audio API"
     });
 })
+
 app.use('/api/user', userRouter);
 app.use('/api/audio', audioRouter);
 
