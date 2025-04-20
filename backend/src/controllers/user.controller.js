@@ -26,6 +26,7 @@ export const registerUser = asyncHandler(async (req, res)=>{
         res.cookie("token", token, {
             httpOnly: true,
             secure: true,         
+            sameSite: 'None', 
         });
         res.status(201).json(new ApiResponse(201, "User registered successfully", {user: newUser, token}));
     } catch (error) {
@@ -55,6 +56,7 @@ export const loginUser = asyncHandler(async (req, res)=>{
     res.status(200).cookie("token", token, {
         httpOnly: true,
         secure: true,
+        sameSite: 'None', 
     }).json(new ApiResponse(200, "User logged in successfully", {user, token}));
 });
 

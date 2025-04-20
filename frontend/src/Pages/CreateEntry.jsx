@@ -42,6 +42,7 @@ const CreateEntry = () => {
     const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/audio/create-audio`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
       },
       withCredentials: true,
     });

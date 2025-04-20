@@ -12,6 +12,9 @@ const Profile = () => {
         (async () => {
             const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/user/profile`, {
                 withCredentials: true,
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                  },
             })
             if (response.status === 200) {
                 const data = response.data.data;

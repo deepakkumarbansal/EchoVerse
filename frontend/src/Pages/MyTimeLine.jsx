@@ -12,6 +12,9 @@ const MyTimeLine = () => {
       try {
         const response = await axios.get(`${import.meta.env.VITE_BASE_URL}/api/audio/get-all-audio`, {
           withCredentials: true,
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         });
     
         if (response.status === 200) {
