@@ -53,6 +53,10 @@ export const getDecryptedAudio = asyncHandler(async (req, res) => {
         throw new ApiError(403, "You are not authorized to access this audio");
     }
     const unlocksAtInMs = new Date(audio.unlocksAt).getTime();
+
+    console.log("Server time:", new Date().toISOString());
+    console.log("Unlocks at:", audio.unlocksAt, new Date(audio.unlocksAt).toISOString());
+
     if (unlocksAtInMs > Date.now()) {
         throw new ApiError(403, "Audio is not unlocked yet");
     }
