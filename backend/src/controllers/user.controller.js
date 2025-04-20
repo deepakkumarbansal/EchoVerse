@@ -11,10 +11,9 @@ export const registerUser = asyncHandler(async (req, res)=>{
     }
     const { fullName, email, password } = req.body;
     const existingUser = await User.findOne({ email });
-    console.log("Checking for existing user", existingUser);
     
     if (existingUser) {
-        throw new ApiError(400, "User already exists");
+        throw new ApiError(401, "User already exists");
     }
     
     try {
@@ -38,16 +37,16 @@ export const loginUser = asyncHandler(async (req, res)=>{
     const errors = validationResult(req);
 
     if(!errors.isEmpty()){
-        return res.status(400).json({ errors: errors.array() });
+        throw new ApiError(400, "Validation Error", errors.array());
     }
     const { email, password } = req.body;
     const user = await User.findOne({ email }).select("+password");
     if (!user) {
-        return res.status(400).json({ message: "Invalid credentials" });
+        throw new ApiError(401, "Invalid email");
     }
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-        return res.status(400).json({ message: "Invalid credentials" });
+        throw new ApiError(402, "Invalid password");
     }
     const token = user.generateToken();
     user.token = token;

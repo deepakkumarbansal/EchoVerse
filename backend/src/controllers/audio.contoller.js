@@ -11,17 +11,17 @@ const SimpleCrypto = simpleCryptoJs.default;
 export const createAudio = asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     if(!errors.isEmpty()) {
-        throw new ApiError(401, "Validation Error", errors.array());
+        throw new ApiError(400, "Validation Error", errors.array());
     }
     const { title, mood, unlockDate, unlocksAt } = req.body;
     const unlocksAtInMs = new Date(unlocksAt).getTime()
     if(unlocksAtInMs < Date.now()) {
-        throw new ApiError(400, "Unlocks at date should be greater than current date");
+        throw new ApiError(405, "Unlocks at date should be greater than current date");
     }
     const userId = req.user._id;
     const localAudioFilePath = req.file?.path;
     if (!localAudioFilePath) {
-        throw new ApiError(400, "Audio file is required");
+        throw new ApiError(406, "Audio file is required");
     }    
     const audioResponse = await cloudinaryUpload(localAudioFilePath);
 
@@ -48,7 +48,6 @@ export const getDecryptedAudio = asyncHandler(async (req, res) => {
     if (!audio) {
         throw new ApiError(404, "Audio not found");
     }
-    console.log("ids", audio.userId, userId);
     
     if(audio.userId.toString() !== userId.toString()) {
         throw new ApiError(403, "You are not authorized to access this audio");

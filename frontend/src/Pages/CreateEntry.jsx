@@ -1,155 +1,202 @@
-import React, { useState } from 'react';
-import RecordAndListnenAudio from '../Components/RecordAndListnenAudio';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import RecordAndListnenAudio from "../Components/RecordAndListnenAudio";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const CreateEntry = () => {
   const getMinDateTime = () => {
     const now = new Date();
-    now.setMinutes(now.getMinutes() + 1); // Add 1 minute
-    //YYYY-MM-DDTHH:MM (datetime-local format)
-    const year = now.getFullYear();
-    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    const day = now.getDate().toString().padStart(2, '0');
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+    now.setMinutes(now.getMinutes() + 1);
+    return now.toISOString().slice(0, 16); // YYYY-MM-DDTHH:MM
   };
-  
-  const [title, setTitle] = useState('');
-  const [unlockDate, setUnlockDate] = useState('');
-  const [mood, setMood] = useState("");
-  const [otherMood, setOtherMood] = useState('');
+  const [error, setError] = useState("");
   const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState(null);
-  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    title: "",
+    unlockDate: "",
+    mood: "",
+    audioBlob: null,
+    otherMood: "",
+  });
+  const availableMoods = [
+    "Select",
+    "😊 Happy",
+    "😢 Sad",
+    "🤩 Excited",
+    "😌 Calm",
+    "🎭 Others",
+  ];
 
-
-  const availableMoods = ['Select','😊 Happy','😢 Sad','🤩 Excited','😌 Calm','🎭 Others'];
-  
-
-  const handleSubmit = async(e) => {
-    if (!title || !unlockDate || new Date(unlockDate) <= new Date() || !mood || (mood === "🎭 Others" && !otherMood) || !audioBlob) {
-      alert("Please fill out all fields including recording or uploading an audio, also unlock date should be in future");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    console.log(formData, "formdata");
+    
+    setError("");
+    setIsLoading(true)
+    if ( !formData.title || !formData.unlockDate || !formData.mood || (formData.mood === "🎭 Others" && !formData.otherMood) || !formData.audioBlob) {
+      setError( "Please fill out all fields.");
+      setIsLoading(false)
       return;
     }
-    console.log("Submitting form with data:", unlockDate)
-    setIsLoading(true);
-    e.preventDefault();
-    const formData = new FormData();
-    formData.append('title', title); 
-    formData.append('unlocksAt', unlockDate);
-    formData.append('mood', mood == "🎭 Others" ? otherMood : mood);
-    formData.append('audioBlob', audioBlob);
-
-    const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/api/audio/create-audio`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
-      },
-      withCredentials: true,
-    });
-    console.log(response.data, "res");
-    
-    if(response.status === 201) {
-      alert("Entry created successfully");
-      navigate('/home')
+    if(new Date(formData.unlockDate) <= new Date()){
+      setError("Unlock date should be in the future");
+      setIsLoading(false)
+      return;
     }
-    setIsLoading(false);
-    setTitle('');
-    setUnlockDate('');
-    setMood('');
-    setOtherMood('');
-    setAudioBlob(null);
-    setIsRecording(false);
+    console.log("cond", new Date(formData.unlockDate) <= new Date());
+    console.log("unlock Date", formData.unlockDate);
+    console.log("new Date", new Date(formData.unlockDate));
+    console.log("current Date", new Date());
     
+
+    try {
+      const data = new FormData();
+      data.append("title", formData.title);
+      data.append("unlocksAt", formData.unlockDate);
+      data.append("mood", formData.mood === "🎭 Others" ? formData.otherMood : formData.mood);
+      data.append("audioBlob", formData.audioBlob);
+
+      const response = await axios.post(
+        `${import.meta.env.VITE_BASE_URL}/api/audio/create-audio`,
+        data,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          withCredentials: true,
+        }
+      );
+
+      if (response.status === 201) {
+        alert("Entry created successfully");
+        navigate("/home");
+      }
+    } catch (error) {
+      if(error.response?.status === 401) {
+        setError(`Unauthorized: ${error.response.data.message}`);
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/login");
+      }
+      else if (error.response?.status === 405) {
+        setError(`Bad Request: ${error.response.data.message || "Unlock date should be in the future"}`);
+      } else if (error.response?.status === 406) {
+        setError("Audio file is required");
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
+    } finally {
+      setFormData({
+        title: "",
+        unlockDate: "",
+        mood: "",
+        audioBlob: null,
+        otherMood: "",
+      })
+      setIsLoading(false);
+      setIsRecording(false);
+    }
   };
 
   return (
-    <div className='flex items-center justify-center min-h-screen w-full'>
-      <div className="font-sans p-6 w-full max-w-lg mx-auto bg-gray-100 rounded-lg shadow-md ">
-        <h1 className="text-center text-2xl font-bold text-gray-800 mb-6">
-          Create Entry
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-100 via-pink-100 to-blue-100 px-4 py-8">
+      <div className="w-full max-w-2xl bg-white/60 backdrop-blur-md rounded-3xl shadow-xl p-8 border border-white/30">
+        <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">
+          🎙️ Create a Secret Entry
         </h1>
-        <form
-          onSubmit={handleSubmit}
-          className="flex flex-col gap-4"
-        >
+        {error && (
+          <p className="text-center mb-4 p-4 bg-red-100 text-red-700 rounded-lg">
+           {error}
+          </p>)}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+          {/* Title */}
           <div>
-            <label className="block mb-2 font-semibold text-gray-700">
-              Title:
+            <label className="block font-semibold mb-2 text-gray-700">
+              Title
             </label>
             <input
               required
               type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-2 border rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              value={formData.title}
+              onChange={(e) => setFormData({...formData, title: e.target.value})}
+              placeholder="e.g. My Secret Diary"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
             />
           </div>
+
+          {/* Unlock Date */}
           <div>
-            <label className="block mb-2 font-semibold text-gray-700">
-              Unlock Date:
+            <label className="block font-semibold mb-2 text-gray-700">
+              Unlock Date
             </label>
             <input
               required
               type="datetime-local"
               min={getMinDateTime()}
-              value={unlockDate}
-              onChange={(e) => setUnlockDate(e.target.value)}
-              className="w-full px-4 py-2 border rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              value={formData.unlockDate}
+              onChange={(e) => setFormData({...formData, unlockDate: e.target.value})}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
             />
           </div>
+
+          {/* Mood Selection */}
           <div>
-            <label className="block mb-2 font-semibold text-gray-700">
-              Mood:
+            <label className="block font-semibold mb-2 text-gray-700">
+              Mood
             </label>
-            <div className="flex gap-2 ">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <select
                 required
-                className="flex flex-wrap gap-3"
-                value={mood}
-                onChange={(e) => setMood(e.target.value)}
+                value={formData.mood}
+                onChange={(e) => setFormData({...formData, mood: e.target.value})}
+                className="w-full sm:w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
               >
-                {availableMoods.map((m, index) => (
+                {availableMoods.map((m, i) => (
                   <option
-                    disabled={m == "Select"}
-                    key={index}
-                    value={m == "Select" ? "" : m}
-                    className="px-4 py-2 border rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    key={i}
+                    disabled={m === "Select"}
+                    value={m === "Select" ? "" : m}
                   >
                     {m}
                   </option>
                 ))}
               </select>
-              {mood == "🎭 Others" && (
+
+              {formData.mood === "🎭 Others" && (
                 <input
                   required
                   type="text"
-                  placeholder="Enter your mood"
-                  value={otherMood}
-                  onChange={(e) => {
-                    setOtherMood(e.target.value);
-                  }}
-                  className="w-full px-4 py-2 border rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  placeholder="e.g. Guilty"
+                  value={formData.otherMood}
+                  onChange={(e) => setFormData({...formData, otherMood: e.target.value})}
+                  className="w-full sm:w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 />
               )}
             </div>
           </div>
+
+          {/* Audio Recorder */}
           <div>
-            <label className="block mb-2 font-semibold text-gray-700">
-              Audio:
+            <label className="block font-semibold mb-2 text-gray-700">
+              Audio
             </label>
-            <RecordAndListnenAudio audioBlob={audioBlob} setAudioBlob={setAudioBlob}/>
+            <RecordAndListnenAudio
+              audioBlob={formData.audioBlob}
+              setFormData={setFormData}
+              formData={formData}
+            />
           </div>
+
+          {/* Submit Button */}
           <button
-            disabled={isLoading}
             type="submit"
-            onClick={handleSubmit}
-            className="px-6 mt-2 w-full py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 self-center"
+            disabled={isLoading}
+            className="w-full py-3 mt-2 bg-indigo-500 text-white font-semibold rounded-lg hover:bg-indigo-600 transition-all duration-300 disabled:opacity-50"
           >
-            { isLoading ? 'Creating secret...': 'Submit'}
+            {isLoading ? "Creating secret..." : "✨ Submit Entry"}
           </button>
         </form>
       </div>

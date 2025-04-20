@@ -1,98 +1,120 @@
-import React, { useEffect, useState } from 'react'
-import { IoIosPlayCircle } from "react-icons/io";
-import { MdOutlinePauseCircleFilled } from "react-icons/md";
+import React, { useEffect, useState } from 'react';
+import { IoIosPlayCircle } from 'react-icons/io';
+import { MdOutlinePauseCircleFilled } from 'react-icons/md';
 
+const RecordAndListnenAudio = ({ audioBlob, setFormData, formData }) => {
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  let audioChunks = [];
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [audioFile, setAudioFile] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
 
-const RecordAndListnenAudio = ({audioBlob, setAudioBlob}) => {
-    const [mediaRecorder, setMediaRecorder] = useState(null);
-    let audioChunks = [];
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [audioFile, setAudioFile] = useState(null);
-    const [isRecording, setIsRecording] = useState(false);
-
-    useEffect(() => {
-        if(audioBlob){
-            const url = URL.createObjectURL(audioBlob)
-            const playableAudio = new Audio(url);
-            setAudioFile(playableAudio);
-        }
-    }, [audioBlob]);
-
-    async function startRecording() {
-        const stream = await navigator.mediaDevices.getUserMedia({audio: true});
-        const mediaRecorder = new MediaRecorder(stream);
-        setMediaRecorder(mediaRecorder);
-        mediaRecorder.ondataavailable = function(e){
-            audioChunks.push(e.data);
-        }
-        mediaRecorder.onstop = function(){
-            const audioBlob = new Blob(audioChunks, {type: "audio/webm"}) 
-            const audioUrl = URL.createObjectURL(audioBlob);
-            const audio = new Audio(audioUrl);
-            audio.play();
-            setAudioBlob(audioBlob);
-            stream.getTracks().forEach(track => track.stop());
-            audioChunks = [];
-            console.log("Audio URL: ", audioUrl,"blob", audioBlob,"audio", audio, "chunks",audioChunks, "stream", stream);
-        }
-        mediaRecorder.start();
-        console.log("Recording started", mediaRecorder);
+  useEffect(() => {
+    if (audioBlob) {
+      const url = URL.createObjectURL(audioBlob);
+      const playableAudio = new Audio(url);
+      setAudioFile(playableAudio);
     }
-    function stopRecording() {
-        mediaRecorder.stop()
-        console.log("Recording stopped");
-    }
+  }, [audioBlob]);
 
-return (
-  <>
-    <div className="text-center">
-      {isRecording ? (
-        <button
-          type='button'
-          onClick={() => {
-            stopRecording();
-            setIsRecording(false);
-          }}
-          className="bg-red-500 text-white rounded w-full px-5 py-2 text-lg cursor-pointer shadow-md hover:bg-red-600"
-        >
-          Stop Recording
-        </button>
-      ) : (
-        <button
-        type='button'
-          onClick={() => {
-            startRecording();
-            setIsRecording(true);
-          }}
-          className="bg-green-500 text-white w-full rounded px-5 py-2 text-lg cursor-pointer shadow-md hover:bg-green-600"
-        >
-          Start Recording
-        </button>
-      )}
-        <p className='mt-2'>Or upload</p>
+  async function startRecording() {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mediaRecorder = new MediaRecorder(stream);
+    setMediaRecorder(mediaRecorder);
+
+    mediaRecorder.ondataavailable = function (e) {
+      audioChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = function () {
+      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      setFormData({ ...formData, audioBlob });
+      stream.getTracks().forEach((track) => track.stop());
+      audioChunks = [];
+    };
+
+    mediaRecorder.start();
+  }
+
+  function stopRecording() {
+    if (mediaRecorder) mediaRecorder.stop();
+  }
+
+  return (
+    <div className="flex flex-col gap-4 bg-white p-4 rounded-lg border shadow-sm">
+      <div className="text-center">
+        {isRecording ? (
+          <button
+            type="button"
+            onClick={() => {
+              stopRecording();
+              setIsRecording(false);
+            }}
+            className="w-full px-4 py-2 text-white bg-red-500 rounded-md shadow hover:bg-red-600 transition-all"
+          >
+            🟥 Stop Recording
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              startRecording();
+              setIsRecording(true);
+            }}
+            className="w-full px-4 py-2 text-white bg-green-500 rounded-md shadow hover:bg-green-600 transition-all"
+          >
+            🎙️ Start Recording
+          </button>
+        )}
+      </div>
+
+      <div className="text-center">
+        <p className="text-sm text-gray-600 mb-1">Or upload an audio file</p>
         <input
           type="file"
           accept="audio/*"
           onChange={(e) => {
             const file = e.target.files[0];
-            setAudioBlob(file);
+            setFormData({ ...formData, audioBlob: file });
           }}
+          className="block p-2 w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
+      </div>
+
+      {audioBlob && (
+        <div className="flex items-center justify-center gap-2 mt-2">
+          {!isPlaying ? (
+            <button
+              type="button"
+              onClick={() => {
+                setIsPlaying(true);
+                audioFile.play();
+                audioFile.onended = () => setIsPlaying(false);
+              }}
+              className="text-blue-600 text-4xl hover:scale-105 transition-all"
+              title="Play Audio"
+            >
+              <IoIosPlayCircle />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setIsPlaying(false);
+                audioFile.pause();
+              }}
+              className="text-blue-600 text-4xl hover:scale-105 transition-all"
+              title="Pause Audio"
+            >
+              <MdOutlinePauseCircleFilled />
+            </button>
+          )}
+        </div>
+      )}
     </div>
-    {audioBlob && (
-      <>
-        {!isPlaying ? (
-          <button type='button' className={`text-3xl mt-2`} onClick={() => {setIsPlaying(true); audioFile.play();}}>
-            <IoIosPlayCircle />
-          </button>
-        ) : (
-          <button type='button' className={`text-3xl mt-2`} onClick={() => {setIsPlaying(false); audioFile.pause();}}>
-            <MdOutlinePauseCircleFilled />
-          </button>
-        )}
-      </>
-    )}
-  </>
-);
-}
-export default RecordAndListnenAudio
+  );
+};
+
+export default RecordAndListnenAudio;
