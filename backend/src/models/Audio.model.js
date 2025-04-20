@@ -24,7 +24,7 @@ const audioSchema = new Schema({
         required: true,
     },
     unlocksAt:{
-        type: Date,
+        type: String,
         required: true,
     },
     notified: {
