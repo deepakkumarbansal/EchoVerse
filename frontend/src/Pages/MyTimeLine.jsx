@@ -5,7 +5,7 @@ const MyTimeLine = () => {
   const [timeLineData, setTimeLineData] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [reverseSortedDates, setReverseSortedDates] = useState([]);
- 
+
   useEffect(() => {
     setLoading(true);
     const fetchTimelineData = async () => {
@@ -16,21 +16,21 @@ const MyTimeLine = () => {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         });
-    
+
         if (response.status === 200) {
           const data = response.data.data;
-    
+
           const updatedData = await Promise.all(
             data.map(async (audioFile) => {
               const isUnlocked = new Date(audioFile.unlocksAt).getTime() <= Date.now();
-    
+
               if (isUnlocked) {
                 try {
                   const fileResponse = await axios.get(
                     `${import.meta.env.VITE_BASE_URL}/api/audio/get-audio/${audioFile._id}`,
                     { withCredentials: true }
                   );
-    
+
                   if (fileResponse.status === 200) {
                     audioFile.file = fileResponse.data.data.audio.file;
                   }
@@ -38,128 +38,93 @@ const MyTimeLine = () => {
                   console.error(`Error fetching file for audio ${audioFile._id}:`, err);
                 }
               }
-    
+
               return audioFile;
             })
           );
-    
+
           const groupedData = updatedData.reduce((acc, audioFile) => {
             const date = audioFile.createdAt;
             const year = new Date(date).getFullYear();
             const month = String(new Date(date).getMonth() + 1).padStart(2, "0");
             const key = `${year}-${month}`;
-    
+
             if (!acc[key]) {
               acc[key] = [];
             }
             acc[key].push(audioFile);
-    
+
             return acc;
           }, {});
-    
+
           const sortedDates = Object.keys(groupedData).sort().reverse();
-    
+
           setTimeLineData(groupedData);
           setReverseSortedDates(sortedDates);
         }
       } catch (error) {
         console.error("Error fetching timeline data:", error);
       }
+      setLoading(false);
     };
-    
 
     fetchTimelineData();
-    setLoading(false);
   }, []);
 
-  return (
-    loading ? (
-      <div className="flex justify-center items-center h-screen">
+  return loading ? (
+    <div className="flex justify-center items-center h-screen bg-gray-50">
       <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500"></div>
-      </div>
-    ) : (
-      <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">My Timeline</h1>
-      <div className="space-y-8">
-        {
-          Object.keys(timeLineData).length > 0 ? (
-            <>
-            {reverseSortedDates.map((date) => {
+    </div>
+  ) : (
+    <div className="p-6 max-w-4xl mx-auto bg-white min-h-screen">
+      <h1 className="text-3xl font-bold mb-8 text-center text-blue-700">🎧 My Audio Timeline</h1>
+      {Object.keys(timeLineData).length > 0 ? (
+        <div className="space-y-10">
+          {reverseSortedDates.map((date) => {
             const audioFiles = timeLineData[date];
             return (
-              <div key={date} className="border-l-4 border-blue-500 pl-4">
-              <h2 className="text-xl font-semibold">{`Group: ${date}`}</h2>
-              <ul className="space-y-4 pl-6">
-                {audioFiles.map((audioFile) => {
-                const isUnlocked = new Date(audioFile.unlocksAt).getTime() <= Date.now();
-                
-                return (
-                  <li key={audioFile._id} className="text-gray-700">
-                    <div className="flex items-center space-x-4">
-                      <div>
-                        <h3 className="font-bold">{audioFile.title}</h3>
-                        <p className="text-sm text-gray-500">{`Mood: ${audioFile.mood}`}</p>
-                        {!isUnlocked && (
-                          <p className="text-sm text-red-500">{`Unlocks At: ${new Date(
-                            audioFile.unlocksAt
-                          ).toLocaleString()}`}</p>
-                        )}
-                      </div>
-                      {isUnlocked ? (
-                        <>
-                        <audio src={audioFile.file} controls ></audio>
-                      </>
-                      ) : (
-                        <button
-                          disabled
-                          className="px-4 py-2 bg-gray-300 text-gray-500 rounded cursor-not-allowed"
-                        >
-                          Locked
-                        </button>
-                      )}
-                    </div>
-                  </li>
-                );
-                })}
-              </ul>
+              <div key={date} className="border-l-4 border-blue-500 pl-6">
+                <h2 className="text-xl font-semibold text-blue-600 mb-4">{`📅 ${date}`}</h2>
+                <ul className="space-y-6">
+                  {audioFiles.map((audioFile) => {
+                    const isUnlocked = new Date(audioFile.unlocksAt).getTime() <= Date.now();
+                    return (
+                      <li
+                        key={audioFile._id}
+                        className="bg-gray-50 p-4 rounded-lg shadow-sm border border-gray-200"
+                      >
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div>
+                            <h3 className="text-lg font-semibold text-gray-800">{audioFile.title}</h3>
+                            <p className="text-sm text-gray-500">{`Mood: ${audioFile.mood}`}</p>
+                            {!isUnlocked && (
+                              <p className="text-sm text-red-500">{`Unlocks At: ${new Date(audioFile.unlocksAt).toLocaleString()}`}</p>
+                            )}
+                          </div>
+                          {isUnlocked ? (
+                            <audio src={audioFile.file} controls className="w-full md:w-80 mt-2 md:mt-0" />
+                          ) : (
+                            <button
+                              disabled
+                              className="px-4 py-2 bg-gray-300 text-gray-600 rounded-lg font-medium shadow-sm cursor-not-allowed"
+                            >
+                              🔒 Locked
+                            </button>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
             );
           })}
-            </>
-          ): (<h1>No Timeline found</h1>)
-        }
-      </div>
+        </div>
+      ) : (
+        <div className="text-center text-lg text-gray-600 mt-10">No Timeline Found</div>
+      )}
     </div>
-    )
   );
 };
 
 export default MyTimeLine;
-
-createdAt
-: 
-"2025-04-19T19:41:22.233Z"
-file
-: 
-"76d37f760098d9bed1cdeafa4c19a1e985098002667d8c474ce7caef1603524fE1hcMTunDr0alt4mm0JSa0+VjzizogXMlGbR6vNVii+bW6uN64pmXlmKBiZkOg+C0ErV/smVLbaZ60W2spPuIKFeSs/ZvjTBto+++WbaQhdUKH28DcN5RdcMISF2V+RD34c155135d9cda18a16f294f5dc7c12329b06b606af182bfba5a17a7fbac53fe"
-mood
-: 
-"Happy"
-title
-: 
-"Confession"
-unlocksAt
-: 
-"2025-04-20T18:30:00.000Z"
-updatedAt
-: 
-"2025-04-19T19:41:22.233Z"
-userId
-: 
-"6803df233bfdf05f82752e88"
-__v
-: 
-0
-_id
-: 
-"6803fc62b66db98c11e57845"
