@@ -23,7 +23,10 @@ export const registerUser = asyncHandler(async (req, res)=>{
         newUser.token = token;
         await newUser.save();
         newUser.password = undefined;
-        res.cookie("token", token);
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: true,         
+        });
         res.status(201).json(new ApiResponse(201, "User registered successfully", {user: newUser, token}));
     } catch (error) {
         throw new ApiError(500, "Error wile creating user", error);
@@ -49,7 +52,10 @@ export const loginUser = asyncHandler(async (req, res)=>{
     user.token = token;
     await user.save();
     user.password = undefined;
-    res.status(200).cookie("token", token).json(new ApiResponse(200, "User logged in successfully", {user, token}));
+    res.status(200).cookie("token", token, {
+        httpOnly: true,
+        secure: true,
+    }).json(new ApiResponse(200, "User logged in successfully", {user, token}));
 });
 
 export const getUserProfile = asyncHandler(async (req, res)=>{
