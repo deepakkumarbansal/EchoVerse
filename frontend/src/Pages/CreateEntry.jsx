@@ -6,8 +6,14 @@ import { useNavigate } from 'react-router-dom';
 const CreateEntry = () => {
   const getMinDateTime = () => {
     const now = new Date();
-    now.setMinutes(now.getMinutes() + 1); // add 1 minute
-    return now.toISOString().slice(0, 16);
+    now.setMinutes(now.getMinutes() + 1); // Add 1 minute
+    //YYYY-MM-DDTHH:MM (datetime-local format)
+    const year = now.getFullYear();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const day = now.getDate().toString().padStart(2, '0');
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
   
   const [title, setTitle] = useState('');
@@ -24,10 +30,11 @@ const CreateEntry = () => {
   
 
   const handleSubmit = async(e) => {
-    if (!title || !unlockDate || !mood || (mood === "🎭 Others" && !otherMood) || !audioBlob) {
-      alert("Please fill out all fields including recording or uploading an audio.");
+    if (!title || !unlockDate || new Date(unlockDate) <= new Date() || !mood || (mood === "🎭 Others" && !otherMood) || !audioBlob) {
+      alert("Please fill out all fields including recording or uploading an audio, also unlock date should be in future");
       return;
     }
+    console.log("Submitting form with data:", unlockDate)
     setIsLoading(true);
     e.preventDefault();
     const formData = new FormData();
