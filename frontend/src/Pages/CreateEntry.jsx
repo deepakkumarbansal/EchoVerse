@@ -6,10 +6,7 @@ import { useNavigate } from 'react-router-dom';
 const CreateEntry = () => {
   const getMinDateTime = () => {
     const now = new Date();
-    now.setMinutes(now.getMinutes() + 10); // add 1 minute
-    now.setDate(now.getDate() + 1); // add 1 day
-    console.log(now.toISOString().slice(0, 16), "min");
-    
+    now.setMinutes(now.getMinutes() + 1); // add 1 minute
     return now.toISOString().slice(0, 16);
   };
   
